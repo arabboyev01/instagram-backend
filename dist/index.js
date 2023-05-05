@@ -26,22 +26,22 @@ app.get('/', (req, res) => {
 app.post("/login", async (req, res) => {
     const { username, password } = req.body;
     const user = await dataBase('login').select('id').where({ username, password }).first();
-    !user && res.status(401).json({ message: 'Invalid credentials' });
-    const token = jwt.sign({ userId: user.id }, 'secret');
-    user && res.json({ token, userId: user.id });
+    console.log(user);
+    if (user !== undefined) {
+        const token = jwt.sign({ id: user.id }, 'secret');
+        user && res.json({ token, userId: user.id });
+    }
+    else {
+        !user && res.status(401).json({ message: 'Invalid credentials' });
+    }
 });
-app.post('/register', (req, res) => {
-    const { firstName, lastName, username, password } = req.body;
-    dataBase('login')
-        .returning('*')
-        .insert({
-        username: username,
-        password: password,
-        firstname: firstName,
-        lastname: lastName
-    }).then((response) => {
-        res.json(response);
-    }).catch((error) => res.json(error));
+app.post('/register', async (req, res) => {
+    const { username, password, firstname, lastname } = req.body;
+    const userId = await dataBase('login')
+        .insert({ username, password, firstname, lastname }, 'id');
+    const token = jwt.sign({ userId }, 'secret');
+    userId && res.json({ token, userId });
+    !userId && res.status(401).json("something went wrong");
 });
 app.post('/post', (req, res) => {
     const { media, userName } = req.body;
