@@ -1,12 +1,15 @@
 const express = require('express');
 const knex = require('knex');
-import bodyParser from "body-parser";
+const bodyParser = require('body-parser');
+const cors = require('cors');
 
 const app = express();
 app.listen(3000, () => {
   console.log('Server started on port 3000');
 });
+
 app.use(bodyParser.json());
+app.use(cors());
 
 const dataBase = knex({
   client: 'pg',
@@ -19,20 +22,41 @@ const dataBase = knex({
   }
 });
 
-const response = [{
-  id:0, 
-  firstName: "Abbosbek",
-  lastName: "Arabboev"
-}]
-
 app.get('/', (req: any, res: any) => {
-  res.json(dataBase.select('*').from('post'));
+  dataBase.select('*').from('login').then((data: any) => res.json(data))
 });
 
+app.post("/login", (req: any, res: any) => {
+  const { username, password } = req.body;
+  dataBase
+    .select("*")
+    .from("login")
+    .then((users: any) => {
+      users.map((user: any) => {
+        console.log(typeof user.password, typeof user.username)
+         if(user.username === username && user.password === password) {
+             res.status(200).json("You can log in");
+        }else{
+           res.status(400).json("Please sign up first")
+        }
+      })
+    })
+});
+
+app.post('/register', (req: any, res: any) => {
+  const {username, password} = req.headers;
+  dataBase('login')
+   .returning('*')
+   .insert({
+    username: username,
+    password: password
+  }).then((response: any) => {
+    res.json(response)
+  }).catch((error: any) => console.error(error))
+})
 
 app.post('/post', (req: any, res: any) => {
   const {media, userName} = req.body;
-  console.log(req.body);
   dataBase('post')
    .returning('*')
    .insert({

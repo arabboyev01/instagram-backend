@@ -1,16 +1,14 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
 const express = require('express');
 const knex = require('knex');
-const body_parser_1 = __importDefault(require("body-parser"));
+const bodyParser = require('body-parser');
+const cors = require('cors');
 const app = express();
 app.listen(3000, () => {
     console.log('Server started on port 3000');
 });
-app.use(body_parser_1.default.json());
+app.use(bodyParser.json());
+app.use(cors());
 const dataBase = knex({
     client: 'pg',
     connection: {
@@ -21,17 +19,40 @@ const dataBase = knex({
         database: 'instagram-database'
     }
 });
-const response = [{
-        id: 0,
-        firstName: "Abbosbek",
-        lastName: "Arabboev"
-    }];
 app.get('/', (req, res) => {
-    res.json(dataBase.select('*').from('post'));
+    dataBase.select('*').from('login').then((data) => res.json(data));
+});
+app.post("/login", (req, res) => {
+    const { username, password } = req.body;
+    console.log(password, username);
+    dataBase
+        .select("*")
+        .from("login")
+        .then((users) => {
+        users.map((user) => {
+            console.log(typeof user.password, typeof user.username);
+            if (user.username === username && user.password === password) {
+                res.status(200).json("You can log in");
+            }
+            else {
+                res.status(400).json("Please sign up first");
+            }
+        });
+    });
+});
+app.post('/register', (req, res) => {
+    const { username, password } = req.headers;
+    dataBase('login')
+        .returning('*')
+        .insert({
+        username: username,
+        password: password
+    }).then((response) => {
+        res.json(response);
+    }).catch((error) => console.error(error));
 });
 app.post('/post', (req, res) => {
     const { media, userName } = req.body;
-    console.log(req.body);
     dataBase('post')
         .returning('*')
         .insert({
