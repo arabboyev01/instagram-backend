@@ -2,6 +2,7 @@ const express = require('express');
 const knex = require('knex');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 app.listen(3000, () => {
@@ -26,33 +27,29 @@ app.get('/', (req: any, res: any) => {
   dataBase.select('*').from('login').then((data: any) => res.json(data))
 });
 
-app.post("/login", (req: any, res: any) => {
+app.post("/login", async (req: any, res: any) => {
   const { username, password } = req.body;
-  dataBase
-    .select("*")
-    .from("login")
-    .then((users: any) => {
-      users.map((user: any) => {
-        console.log(typeof user.password, typeof user.username)
-         if(user.username === username && user.password === password) {
-             res.status(200).json("You can log in");
-        }else{
-           res.status(400).json("Please sign up first")
-        }
-      })
-    })
+
+  const user = await dataBase('login').select('id').where({ username, password }).first()
+
+  !user && res.status(401).json({ message: 'Invalid credentials' })
+  const token = jwt.sign({ userId: user.id }, 'secret');
+
+  user && res.json({ token, userId: user.id });
 });
 
 app.post('/register', (req: any, res: any) => {
-  const {username, password} = req.headers;
+  const {firstName, lastName,username, password} = req.body;
   dataBase('login')
    .returning('*')
    .insert({
-    username: username,
-    password: password
+     username: username,
+    password: password,
+     firstname: firstName,
+     lastname: lastName
   }).then((response: any) => {
     res.json(response)
-  }).catch((error: any) => console.error(error))
+  }).catch((error: any) => res.json(error))
 })
 
 app.post('/post', (req: any, res: any) => {
