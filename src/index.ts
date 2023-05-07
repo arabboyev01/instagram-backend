@@ -3,6 +3,7 @@ const knex = require('knex');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 
 const app = express();
 app.listen(3000, () => {
@@ -44,13 +45,15 @@ app.post("/login", async (req: any, res: any) => {
 app.post('/register', async (req: any, res: any) => {
   const {username, password, firstname, lastname} = req.body;
 
-   const userId = await dataBase('login')
-   .insert({ username, password, firstname, lastname }, 'id');
-   const token = jwt.sign({ userId }, 'secret');
-  
-   userId && res.json({ token, userId });
-   !userId && res.status(401).json("something went wrong");
-
+  bcrypt.genSalt(10, function(err: any, salt: any) {
+    bcrypt.hash(password, salt, async(err: any, password: any) =>  {
+      const userId = await dataBase('login').insert({ username, password, firstname, lastname }, 'id');
+      const token = jwt.sign({ userId }, 'secret');
+      userId && res.json({ token, userId });
+      !userId && res.status(401).json("something went wrong");
+      await dataBase('posts').insert({login_id: userId[0].id })
+    });
+  });
 })
 
 app.post('/post', (req: any, res: any) => {
