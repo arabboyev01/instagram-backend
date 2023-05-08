@@ -4,6 +4,8 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const multer = require('multer');
+
 
 const app = express();
 app.listen(3000, () => {
@@ -12,6 +14,7 @@ app.listen(3000, () => {
 
 app.use(bodyParser.json());
 app.use(cors());
+
 
 const dataBase = knex({
   client: 'pg',
@@ -57,7 +60,7 @@ app.post('/register', async (req: any, res: any) => {
 })
 
 app.post('/post', (req: any, res: any) => {
-  const {media, userName} = req.body;
+  const {media, userName} = req.body;``
   dataBase('post')
    .returning('*')
    .insert({
@@ -68,4 +71,40 @@ app.post('/post', (req: any, res: any) => {
   }).then((response: any) => {
     res.json(response)
   })
+})
+
+function verifyToken(req: any, res: any, next: any) {
+  const token = req.headers.authorization.split(' ')[1];
+
+  jwt.verify(token, 'secret', (err: any, decoded: any) => {
+    if (err) {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+    req.decoded = decoded;
+    next();
+  });
+}
+const upload = multer({ dest: 'uploads/' });
+
+
+app.put('/api/post/:login_id', upload.single('content'), verifyToken, (req: any, res: any) => {
+  // const {comment} = req.body;
+  // const {content} = req.file;
+  // const login_id = req.params.login_id;
+  // console.log("comment", comment)
+  // console.log("content", content)
+  // console.log("loginId", login_id)
+  const { comment } = req.body; 
+  const imageBuffer = req.file.path; 
+  console.log(comment)
+  console.log(imageBuffer)
+
+  //  dataBase('posts').where(login_id).update({ comment, content })
+  //   .then(() => {
+  //     res.status(200).json({ message: 'Item updated successfully' });
+  //   })
+  //   .catch((err: any) => {
+  //     console.error(err);
+  //     res.status(500).json({ message: 'Error updating item' });
+  //   });
 })

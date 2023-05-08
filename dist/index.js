@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const multer = require('multer');
 const app = express();
 app.listen(3000, () => {
     console.log('Server started on port 3000');
@@ -49,6 +50,7 @@ app.post('/register', async (req, res) => {
 });
 app.post('/post', (req, res) => {
     const { media, userName } = req.body;
+    ``;
     dataBase('post')
         .returning('*')
         .insert({
@@ -59,4 +61,29 @@ app.post('/post', (req, res) => {
     }).then((response) => {
         res.json(response);
     });
+});
+function verifyToken(req, res, next) {
+    const token = req.headers.authorization.split(' ')[1];
+    jwt.verify(token, 'secret', (err, decoded) => {
+        if (err) {
+            return res.status(401).json({ message: 'Invalid token' });
+        }
+        req.decoded = decoded;
+        next();
+    });
+}
+const upload = multer({ dest: 'uploads/' });
+app.put('/api/post/:login_id', upload.single('content'), verifyToken, (req, res) => {
+    const { comment } = req.body;
+    const imageBuffer = req.file.path;
+    console.log(comment);
+    console.log(imageBuffer);
+    //  dataBase('posts').where(login_id).update({ comment, content })
+    //   .then(() => {
+    //     res.status(200).json({ message: 'Item updated successfully' });
+    //   })
+    //   .catch((err: any) => {
+    //     console.error(err);
+    //     res.status(500).json({ message: 'Error updating item' });
+    //   });
 });
