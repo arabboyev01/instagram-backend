@@ -74,6 +74,12 @@ function verifyToken(req, res, next) {
 }
 const upload = multer({ dest: 'uploads/' });
 app.put('/api/post/:login_id', upload.single('content'), verifyToken, (req, res) => {
+    // const {comment} = req.body;
+    // const {content} = req.file;
+    // const login_id = req.params.login_id;
+    // console.log("comment", comment)
+    // console.log("content", content)
+    // console.log("loginId", login_id)
     const { comment } = req.body;
     const imageBuffer = req.file.path;
     console.log(comment);
