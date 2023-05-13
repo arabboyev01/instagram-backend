@@ -14,6 +14,7 @@ app.listen(3000, () => {
 
 app.use(bodyParser.json());
 app.use(cors());
+app.use(express.static('uploads'))
 
 
 const dataBase = knex({
@@ -27,9 +28,6 @@ const dataBase = knex({
   }
 });
 
-app.get('/', (req: any, res: any) => {
-  dataBase.select('*').from('login').then((data: any) => res.json(data))
-});
 
 app.post("/login", async (req: any, res: any) => {
   const { username, password } = req.body;
@@ -80,13 +78,26 @@ function verifyToken(req: any, res: any, next: any) {
     next();
   });
 }
+
+app.get('/', (req: any, res: any) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader.split(' ')[1]
+  const decoded: any = jwt.decode(token);
+  const id = decoded.id
+
+  if(token){
+     dataBase.select('*').from('posts').where({login_id: id}).then((data: any) =>{
+     res.status(200).json(data);
+    })
+  }
+});
+// "start": "nodemon --watch tsc 'src/**/*.ts' --exec 'npx tsc && node dist/index.js'",
 const upload = multer({ dest: 'uploads/' });
 
 app.put('/api/post/:id', upload.single('content'), verifyToken, (req: any, res: any) => {
 
   const login_id = req.params.id;
   const { comment, content } = req.body; 
-  console.log(comment, content);
   
    dataBase('posts').where({login_id: login_id}).update({ comment, content })
     .then(() => {

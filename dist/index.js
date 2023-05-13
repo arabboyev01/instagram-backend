@@ -12,6 +12,7 @@ app.listen(3000, () => {
 });
 app.use(bodyParser.json());
 app.use(cors());
+app.use(express.static('uploads'));
 const dataBase = knex({
     client: 'pg',
     connection: {
@@ -21,9 +22,6 @@ const dataBase = knex({
         password: '',
         database: 'instagram-database'
     }
-});
-app.get('/', (req, res) => {
-    dataBase.select('*').from('login').then((data) => res.json(data));
 });
 app.post("/login", async (req, res) => {
     const { username, password } = req.body;
@@ -63,6 +61,18 @@ function verifyToken(req, res, next) {
         next();
     });
 }
+app.get('/', (req, res) => {
+    const authHeader = req.headers.authorization;
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.decode(token);
+    const id = decoded.id;
+    if (token) {
+        dataBase.select('*').from('posts').where({ login_id: id }).then((data) => {
+            res.status(200).json(data);
+        });
+    }
+});
+// "start": "nodemon --watch tsc 'src/**/*.ts' --exec 'npx tsc && node dist/index.js'",
 const upload = multer({ dest: 'uploads/' });
 app.put('/api/post/:id', upload.single('content'), verifyToken, (req, res) => {
     const login_id = req.params.id;
