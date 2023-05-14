@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.ts",
+  "type": "module",
   "scripts": {
     "start": "nodemon --watch tsc 'src/**/*.ts' --exec 'npx tsc && node dist/index.js'",
     "build": "tsc --watch"
@@ -11,6 +12,13 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@babel/cli": "^7.21.5",
+    "@babel/core": "^7.21.8",
+    "@babel/preset-env": "^7.21.5",
+    "@types/bcrypt": "^5.0.0",
+    "@types/cors": "^2.8.13",
+    "@types/jsonwebtoken": "^9.0.2",
+    "@types/multer": "^1.4.7",
     "nodemon": "^2.0.22",
     "typescript": "^5.0.4"
   },
