@@ -1,42 +1,38 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.RegisterUser = exports.CheckUsers = void 0;
-const connect_1 = require("./connect");
-const bcrypt_1 = __importDefault(require("bcrypt"));
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const CheckUsers = (req, res) => {
+import { dataBase } from "./connect/index.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+export const CheckUsers = (req, res) => {
     const { username, password } = req.body;
-    const hashPassword = (0, connect_1.dataBase)('login').select('password').where({ username }).first();
-    console.log(hashPassword);
-    bcrypt_1.default.compare(password, hashPassword.password, (err, result) => {
-        connect_1.dataBase.select('id').from('login').where({ username }).then((userId) => {
-            if (result) {
-                const token = jsonwebtoken_1.default.sign({ id: userId[0].id }, 'secret');
-                res.json({ token, userId: userId[0].id });
-            }
-            else {
-                res.status(401).json({ message: 'Invalid credentials' });
-            }
-        });
-    });
-};
-exports.CheckUsers = CheckUsers;
-const RegisterUser = (req, res) => {
-    const { username, password, firstname, lastname } = req.body;
-    bcrypt_1.default.genSalt(10, (err, salt) => {
-        bcrypt_1.default.hash(password, salt, async (err, password) => {
-            await (0, connect_1.dataBase)('login').insert({ username, password, firstname, lastname });
-            connect_1.dataBase.select('id').from('login').where({ username }).then((userId) => {
-                const token = jsonwebtoken_1.default.sign({ id: userId[0].id }, 'secret');
-                userId && res.json({ token, userId });
-                !userId && res.status(401).json("something went wrong");
-                (0, connect_1.dataBase)('posts').insert({ login_id: userId[0].id });
-                (0, connect_1.dataBase)('profile').insert({ login_id: userId[0].id, firstname, lastname, username });
+    dataBase('login').select('password').where({ username }).then((hashPassword) => {
+        console.log(hashPassword);
+        bcrypt.compare(password, hashPassword[0].password, (err, result) => {
+            dataBase.select('id').from('login').where({ username }).then((userId) => {
+                if (result) {
+                    const token = jwt.sign({ id: userId[0].id }, 'secret');
+                    res.json({ token, userId: userId[0].id });
+                }
+                else {
+                    res.status(401).json({ message: 'Invalid credentials' });
+                }
             });
         });
     });
 };
-exports.RegisterUser = RegisterUser;
+// What do you do about an expression such as O ( N
+// 2 + N)? That second N isn't exactly a constant. But it's
+// not especially important
+export const RegisterUser = (req, res) => {
+    const { username, password, firstname, lastname } = req.body;
+    bcrypt.genSalt(10, (err, salt) => {
+        bcrypt.hash(password, salt, async (err, password) => {
+            await dataBase('login').insert({ username, password, firstname, lastname });
+            dataBase.select('id').from('login').where({ username }).then((userId) => {
+                const token = jwt.sign({ id: userId[0].id }, 'secret');
+                userId && res.json({ token, userId });
+                !userId && res.status(401).json("something went wrong");
+                dataBase('posts').insert({ login_id: userId[0].id });
+                dataBase('profile').insert({ login_id: userId[0].id, firstname, lastname, username });
+            });
+        });
+    });
+};
